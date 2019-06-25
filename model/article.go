@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 )
 
@@ -16,4 +17,18 @@ type Article struct {
 type UpdateArticle struct {
 	Description string `json:"description"`
 	Content     string `json:"content"`
+}
+
+func (update *UpdateArticle) IsValid() bool {
+	return true // Could add some validation logic here
+}
+
+func (update *UpdateArticle) TransformToArticle() (*Article, error) {
+	if !update.IsValid() {
+		return nil, errors.New("update article object is not valid")
+	}
+	return &Article{
+		Description: update.Description,
+		Content:     update.Content,
+	}, nil
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/alexzimmer96/gqlgen-example/graphql"
+	"github.com/alexzimmer96/gqlgen-example/repository"
+	"github.com/alexzimmer96/gqlgen-example/service"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/muesli/cache2go"
@@ -20,11 +22,12 @@ func init() {
 }
 
 func main() {
-
 	db := cache2go.Cache("example")
+	articleRepo := repository.NewArticleRepository(db)
+	articleService := service.NewArticleService(articleRepo)
 
 	router := chi.NewRouter()
-	res := graphql.NewResolver()
+	res := graphql.NewResolver(articleService)
 
 	graphqlConfig := graphql.NewExecutableSchema(graphql.Config{Resolvers: res})
 	websocketUpgrader := handler.WebsocketUpgrader(websocket.Upgrader{
