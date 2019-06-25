@@ -1,0 +1,29 @@
+type Article {
+    id: String!
+    description: String!
+    content: String!
+    createdAt: Timestamp!
+    updatedAt: Timestamp!
+}
+
+input UpdateArticle {
+    description: String!
+    content: String!
+}
+
+type Query {
+    articles: [Article]!
+    article(id: ID!): Article
+}
+
+type Mutation {
+    createArticle(article: UpdateArticle!): Article!
+    updateArticle(id: ID!, update: UpdateArticle!): Article!
+    deleteArticle(id: ID!): Boolean!
+}
+
+type Subscription {
+    articleCreated: Article!
+}
+
+scalar Timestamp

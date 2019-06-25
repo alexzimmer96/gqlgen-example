@@ -1,0 +1,19 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+
+schema: "schema.graphql"
+
+exec:
+  filename: graphql/server_generated.go
+model:
+  filename: graphql/models_generated.go
+
+models:
+  Article:
+    model: github.com/alexzimmer96/gqlgen-example/model.Article
+  UpdateArticle:
+    model: github.com/alexzimmer96/gqlgen-example/model.UpdateArticle
+  Timestamp:
+    model: github.com/alexzimmer96/gqlgen-example/model.Timestamp
