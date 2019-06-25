@@ -1,14 +1,22 @@
 type Article {
     id: String!
+    title: String!
     description: String!
     content: String!
     createdAt: Timestamp!
     updatedAt: Timestamp!
 }
 
-input UpdateArticle {
+input CreateArticle {
+    title: String!
     description: String!
     content: String!
+}
+
+input UpdateArticle {
+    title: String
+    description: String
+    content: String
 }
 
 type Query {
@@ -17,7 +25,7 @@ type Query {
 }
 
 type Mutation {
-    createArticle(article: UpdateArticle!): Article!
+    createArticle(article: CreateArticle!): Article!
     updateArticle(id: ID!, update: UpdateArticle!): Article!
     deleteArticle(id: ID!): Boolean!
 }

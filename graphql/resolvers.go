@@ -40,12 +40,12 @@ func (r *Resolver) Mutation() MutationResolver {
 
 type mutationResolver struct{ *Resolver }
 
-func (r *mutationResolver) CreateArticle(ctx context.Context, article model.UpdateArticle) (*model.Article, error) {
+func (r *mutationResolver) CreateArticle(ctx context.Context, article model.CreateArticle) (*model.Article, error) {
 	return r.articleService.CreateArticleFromRequest(&article)
 }
 
 func (r *mutationResolver) UpdateArticle(ctx context.Context, id string, update model.UpdateArticle) (*model.Article, error) {
-	panic("implement me")
+	return r.articleService.ApplyArticleChanges(id, &update)
 }
 
 func (r *mutationResolver) DeleteArticle(ctx context.Context, id string) (bool, error) {
@@ -61,12 +61,16 @@ func (r *Resolver) Subscription() SubscriptionResolver {
 type subscriptionResolver struct{ *Resolver }
 
 func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *model.Article, error) {
-	incoming := r.articleService.GetCreationStream()
+	subscription := r.articleService.SubscribeArticleCreation()
+	incoming := subscription.CreationStream
 	returningChannel := make(chan *model.Article)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
+				r.articleService.UnsubscribeArticleCreation(subscription)
+				close(incoming)
+				close(returningChannel)
 				return
 			case article := <-incoming:
 				returningChannel <- article

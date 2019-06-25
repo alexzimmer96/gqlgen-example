@@ -13,6 +13,8 @@ model:
 models:
   Article:
     model: github.com/alexzimmer96/gqlgen-example/model.Article
+  CreateArticle:
+    model: github.com/alexzimmer96/gqlgen-example/model.CreateArticle
   UpdateArticle:
     model: github.com/alexzimmer96/gqlgen-example/model.UpdateArticle
   Timestamp:
