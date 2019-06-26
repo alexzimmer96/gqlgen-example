@@ -43,8 +43,8 @@ This repository gives an overview of how you could structure a GraphQL-Applicati
 |[99design/gqlgen](https://github.com/99designs/gqlgen)|Generating GraphQL-Server and Resolver-Interface based on `schema.graphql`. Can also generate missing models|
 |[go-chi/chi](https://github.com/go-chi/chi)|HTTP-Server implementation. Could be any else but i have good experiences with this one|
 |[sirupsen/logrus](https://github.com/sirupsen/logrus)|Structured logging library including a native JSON-formatter. Making logging a lot more comfortable|
-|[gofrs/uuid](github.com/gofrs/uuid)|Used for generation UUIDs for the in-memory database used in this example|
-|[muesli/cache2go](github.com/muesli/cache2go)|Embedded Key-Value Database. Used as Storage-Backend for this example|
+|[gofrs/uuid](https://github.com/gofrs/uuid)|Used for generation UUIDs for the in-memory database used in this example|
+|[muesli/cache2go](https://github.com/muesli/cache2go)|Embedded Key-Value Database. Used as Storage-Backend for this example|
 
 ## Core Concepts
 ![architectorial overview](graphql-example-architecture.png "architectorial overview")
