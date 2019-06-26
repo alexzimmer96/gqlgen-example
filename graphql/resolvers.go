@@ -5,7 +5,6 @@ import (
 	"github.com/alexzimmer96/gqlgen-example/model"
 	"github.com/alexzimmer96/gqlgen-example/service"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 type Resolver struct {
@@ -21,11 +20,12 @@ func NewResolver(articleService *service.ArticleService) *Resolver {
 //======================================================================================================================
 
 var (
-	resolverRequest = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "graphql_resolver_requests"}, []string{"action_type", "endpoint"})
+	resolverRequest        = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "graphql_resolver_requests"}, []string{"action_type", "action"})
+	subscriptionDeliveries = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "graphql_subscription_deliveries"}, []string{"action"})
 )
 
 func init() {
-	prometheus.MustRegister(resolverRequest)
+	prometheus.MustRegister(resolverRequest, subscriptionDeliveries)
 }
 
 //======================================================================================================================
@@ -78,7 +78,6 @@ func (r *Resolver) Subscription() SubscriptionResolver {
 type subscriptionResolver struct{ *Resolver }
 
 func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *model.Article, error) {
-	resolverRequest.WithLabelValues("subscription", "ArticleCreated").Add(1)
 	subscription := r.articleService.SubscribeArticleCreation()
 	incoming := subscription.CreationStream
 	returningChannel := make(chan *model.Article)
@@ -86,12 +85,12 @@ func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *mode
 		for {
 			select {
 			case <-ctx.Done():
-				logrus.Info("got done context for subscription")
 				r.articleService.UnsubscribeArticleCreation(subscription)
 				close(incoming)
 				close(returningChannel)
 				return
 			case article := <-incoming:
+				subscriptionDeliveries.WithLabelValues("ArticleCreated").Add(1)
 				returningChannel <- article
 			}
 		}

@@ -41,13 +41,15 @@ This repository gives an overview of how you could structure a GraphQL-Applicati
 |Framework/Tool|Description|
 |---|---|
 |[99design/gqlgen](https://github.com/99designs/gqlgen)|Generating GraphQL-Server and Resolver-Interface based on `schema.graphql`. Can also generate missing models|
-|[go-chi/chi](https://github.com/go-chi/chi)|HTTP-Server implementation. Could be any else but i have good experiences with this one|
 |[sirupsen/logrus](https://github.com/sirupsen/logrus)|Structured logging library including a native JSON-formatter. Making logging a lot more comfortable|
 |[gofrs/uuid](https://github.com/gofrs/uuid)|Used for generation UUIDs for the in-memory database used in this example|
 |[muesli/cache2go](https://github.com/muesli/cache2go)|Embedded Key-Value Database. Used as Storage-Backend for this example|
 |[prometheus/client_golang](https://github.com/prometheus/client_golang)|Prometheus client is used for providing `/metrics` endpoint|
+|[dimiro1/health](https://github.com/dimiro1/health)|Tool for providing a simple `/status` endpoint. Used for health-checking|
 ## Core Concepts
-![architectorial overview](graphql-example-architecture.png "architectorial overview")
+<p align="center">
+    <img src="./graphql-example-architecture.png" alt="architectorial overview" />
+</p>
 
 ### Repository
 The Repository layer is holding logic for interactions with any kind of data store.

@@ -8,7 +8,6 @@ import (
 	"github.com/alexzimmer96/gqlgen-example/repository"
 	"github.com/alexzimmer96/gqlgen-example/service"
 	"github.com/dimiro1/health"
-	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/muesli/cache2go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -32,7 +31,6 @@ func main() {
 	articleService := service.NewArticleService(articleRepo)
 
 	// Create a new Router and Register the GraphQL-Resolver
-	router := chi.NewRouter()
 	res := graphql.NewResolver(articleService)
 
 	// Some GraphQL-Configuration
@@ -46,33 +44,32 @@ func main() {
 	websocketKeepalive := handler.WebsocketKeepAliveDuration(time.Second * 5)
 
 	graphqlHandler := handler.GraphQL(graphqlConfig, websocketUpgrader, websocketKeepalive)
-	router.Handle("/query", graphqlHandler)
+	http.Handle("/query", graphqlHandler)
 
 	// Adding Playground, maybe adding a debug-mode switch later
 	playgroundHandler := handler.Playground("GraphQL", "/query")
-	router.Get("/playground", playgroundHandler)
+	http.Handle("/playground", playgroundHandler)
 
 	// Adding "/metrics" endpoint for prometheus
-	router.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 
 	// Adding "/status" endpoint for health-checking
 	healthHandler := health.NewHandler()
-	router.Handle("/status", healthHandler)
-	router.HandleFunc("/_stack", getStackTraceHandler)
+	http.Handle("/status", healthHandler)
+	http.HandleFunc("/_stack", getStackTraceHandler)
 
 	// Finally starting the HTTP-Server
-	startHttpServer(router, 1337)
+	startHttpServer(1337)
 }
 
 // Starting a HTTP-Server using the router object an a given port
 // Handles graceful-shutdowns
-func startHttpServer(router *chi.Mux, port int) {
+func startHttpServer(port int) {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      router,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
@@ -102,5 +99,4 @@ func getStackTraceHandler(w http.ResponseWriter, r *http.Request) {
 	stack := debug.Stack()
 	w.Write(stack)
 	pprof.Lookup("goroutine").WriteTo(w, 2)
-
 }

@@ -43,7 +43,10 @@ func (repo *ArticleRepository) Save(article *model.Article) (*model.Article, err
 	article.UpdatedAt = now
 	repo.db.Add(article.ID, 0, article)
 	if created {
-		repo.creationStream <- article
+		select {
+		case repo.creationStream <- article:
+		default:
+		}
 	}
 	return article, nil
 }
