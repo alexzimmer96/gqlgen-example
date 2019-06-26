@@ -22,6 +22,7 @@ type ArticleRepository struct {
 	creationStream chan *model.Article
 }
 
+// Creates a new article instance
 func NewArticleRepository(db *cache2go.CacheTable) *ArticleRepository {
 	return &ArticleRepository{
 		db:             db,
@@ -29,6 +30,8 @@ func NewArticleRepository(db *cache2go.CacheTable) *ArticleRepository {
 	}
 }
 
+// Saves an article to the database. When the passed article object does not have the id-attribute set,
+// a new id will be generated and assigned to the object. Timestamps are set automatically.
 func (repo *ArticleRepository) Save(article *model.Article) (*model.Article, error) {
 	created := false
 	now := time.Now()
@@ -45,6 +48,7 @@ func (repo *ArticleRepository) Save(article *model.Article) (*model.Article, err
 	return article, nil
 }
 
+// Fetches a single Article by its id. Returning nil as Article when no Article with the given ID was found.
 func (repo *ArticleRepository) GetSingle(id string) (*model.Article, error) {
 	item, err := repo.db.Value(id)
 	if item == nil || err == cache2go.ErrKeyNotFound {
@@ -53,6 +57,7 @@ func (repo *ArticleRepository) GetSingle(id string) (*model.Article, error) {
 	return item.Data().(*model.Article), nil
 }
 
+// Fetches a list all Articles from the database.
 func (repo *ArticleRepository) GetAll() ([]*model.Article, error) {
 	var articles []*model.Article
 	repo.db.Foreach(func(id interface{}, item *cache2go.CacheItem) {
@@ -61,6 +66,7 @@ func (repo *ArticleRepository) GetAll() ([]*model.Article, error) {
 	return articles, nil
 }
 
+// Delete an article from database by its id. Returning false and error, when no object with the given was where found.
 func (repo *ArticleRepository) Delete(id string) (bool, error) {
 	_, err := repo.db.Delete(id)
 	if err == cache2go.ErrKeyNotFound {
@@ -69,6 +75,7 @@ func (repo *ArticleRepository) Delete(id string) (bool, error) {
 	return true, nil
 }
 
+// Returns a channel receiving all Articles that will be created.
 func (repo *ArticleRepository) GetCreationStream() chan *model.Article {
 	return repo.creationStream
 }
