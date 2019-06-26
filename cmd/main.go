@@ -7,13 +7,17 @@ import (
 	"github.com/alexzimmer96/gqlgen-example/graphql"
 	"github.com/alexzimmer96/gqlgen-example/repository"
 	"github.com/alexzimmer96/gqlgen-example/service"
+	"github.com/dimiro1/health"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/muesli/cache2go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"runtime/pprof"
 	"time"
 )
 
@@ -48,6 +52,14 @@ func main() {
 	playgroundHandler := handler.Playground("GraphQL", "/query")
 	router.Get("/playground", playgroundHandler)
 
+	// Adding "/metrics" endpoint for prometheus
+	router.Handle("/metrics", promhttp.Handler())
+
+	// Adding "/status" endpoint for health-checking
+	healthHandler := health.NewHandler()
+	router.Handle("/status", healthHandler)
+	router.HandleFunc("/_stack", getStackTraceHandler)
+
 	// Finally starting the HTTP-Server
 	startHttpServer(router, 1337)
 }
@@ -62,7 +74,6 @@ func startHttpServer(router *chi.Mux, port int) {
 		IdleTimeout:  time.Second * 60,
 		Handler:      router,
 	}
-
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			logrus.Error(err)
@@ -85,4 +96,11 @@ func startHttpServer(router *chi.Mux, port int) {
 		logrus.Info("shutdown completed")
 	}
 	os.Exit(0)
+}
+
+func getStackTraceHandler(w http.ResponseWriter, r *http.Request) {
+	stack := debug.Stack()
+	w.Write(stack)
+	pprof.Lookup("goroutine").WriteTo(w, 2)
+
 }

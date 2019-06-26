@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/alexzimmer96/gqlgen-example/model"
 	"github.com/alexzimmer96/gqlgen-example/service"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 )
 
 type Resolver struct {
@@ -18,6 +20,16 @@ func NewResolver(articleService *service.ArticleService) *Resolver {
 
 //======================================================================================================================
 
+var (
+	resolverRequest = prometheus.NewCounterVec(prometheus.CounterOpts{Name: "graphql_resolver_requests"}, []string{"action_type", "endpoint"})
+)
+
+func init() {
+	prometheus.MustRegister(resolverRequest)
+}
+
+//======================================================================================================================
+
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
 }
@@ -25,10 +37,12 @@ func (r *Resolver) Query() QueryResolver {
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Articles(ctx context.Context) ([]*model.Article, error) {
+	resolverRequest.WithLabelValues("query", "Articles").Add(1)
 	return r.articleService.ListArticles()
 }
 
 func (r *queryResolver) Article(ctx context.Context, id string) (*model.Article, error) {
+	resolverRequest.WithLabelValues("query", "Article").Add(1)
 	return r.articleService.GetArticle(id)
 }
 
@@ -41,14 +55,17 @@ func (r *Resolver) Mutation() MutationResolver {
 type mutationResolver struct{ *Resolver }
 
 func (r *mutationResolver) CreateArticle(ctx context.Context, article model.CreateArticle) (*model.Article, error) {
+	resolverRequest.WithLabelValues("mutation", "CreateArticle").Add(1)
 	return r.articleService.CreateArticleFromRequest(&article)
 }
 
 func (r *mutationResolver) UpdateArticle(ctx context.Context, id string, update model.UpdateArticle) (*model.Article, error) {
+	resolverRequest.WithLabelValues("mutation", "UpdateArticle").Add(1)
 	return r.articleService.ApplyArticleChanges(id, &update)
 }
 
 func (r *mutationResolver) DeleteArticle(ctx context.Context, id string) (bool, error) {
+	resolverRequest.WithLabelValues("mutation", "DeleteArticle").Add(1)
 	return r.articleService.DeleteArticle(id)
 }
 
@@ -61,6 +78,7 @@ func (r *Resolver) Subscription() SubscriptionResolver {
 type subscriptionResolver struct{ *Resolver }
 
 func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *model.Article, error) {
+	resolverRequest.WithLabelValues("subscription", "ArticleCreated").Add(1)
 	subscription := r.articleService.SubscribeArticleCreation()
 	incoming := subscription.CreationStream
 	returningChannel := make(chan *model.Article)
@@ -68,6 +86,7 @@ func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *mode
 		for {
 			select {
 			case <-ctx.Done():
+				logrus.Info("got done context for subscription")
 				r.articleService.UnsubscribeArticleCreation(subscription)
 				close(incoming)
 				close(returningChannel)

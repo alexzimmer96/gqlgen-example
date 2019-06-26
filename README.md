@@ -45,7 +45,7 @@ This repository gives an overview of how you could structure a GraphQL-Applicati
 |[sirupsen/logrus](https://github.com/sirupsen/logrus)|Structured logging library including a native JSON-formatter. Making logging a lot more comfortable|
 |[gofrs/uuid](https://github.com/gofrs/uuid)|Used for generation UUIDs for the in-memory database used in this example|
 |[muesli/cache2go](https://github.com/muesli/cache2go)|Embedded Key-Value Database. Used as Storage-Backend for this example|
-
+|[prometheus/client_golang](https://github.com/prometheus/client_golang)|Prometheus client is used for providing `/metrics` endpoint|
 ## Core Concepts
 ![architectorial overview](graphql-example-architecture.png "architectorial overview")
 
