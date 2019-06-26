@@ -23,10 +23,14 @@ type CreateArticle struct {
 	Content     string `json:"content"`
 }
 
+// Returns if the UpdateArticle-Object is valid
+// Could be improved by returning a list of validation errors instead of just a boolean.
 func (creationRequest *CreateArticle) IsValid() bool {
 	return true // Could add some validation logic here
 }
 
+// Transforms a CreateArticle-Request into an Article-Object.
+// Returns the new Article-Object or an error, if the CreateArticle-Request is not valid.
 func (creationRequest *CreateArticle) TransformToArticle() (*Article, error) {
 	if !creationRequest.IsValid() {
 		return nil, errors.New("article object is not valid")
@@ -46,22 +50,27 @@ type UpdateArticle struct {
 	Content     *string `json:"content,omitempty"`
 }
 
+// Returns if the UpdateArticle-Object is valid
+// Could be improved by returning a list of validation errors instead of just a boolean.
 func (update *UpdateArticle) IsValid() bool {
 	return true // Could add some validation logic here
 }
 
+// Merge changes from the UpdateArticle-Request into an existing Article.
+// Returns the modified Article or an error, if the UpdateArticle-Object is not valid.
 func (update *UpdateArticle) MergeChanges(article *Article) (*Article, error) {
 	if !update.IsValid() {
 		return nil, errors.New("article object is not valid")
 	}
-	if update.Title != nil {
-		article.Title = *update.Title
-	}
-	if update.Description != nil {
-		article.Title = *update.Description
-	}
-	if update.Content != nil {
-		article.Title = *update.Content
-	}
+	article.Title = setStringIfNotNil(article.Title, update.Title)
+	article.Description = setStringIfNotNil(article.Description, update.Description)
+	article.Content = setStringIfNotNil(article.Content, update.Content)
 	return article, nil
+}
+
+func setStringIfNotNil(oldValue string, newValue *string) string {
+	if newValue != nil {
+		return *newValue
+	}
+	return oldValue
 }
