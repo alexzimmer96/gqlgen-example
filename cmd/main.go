@@ -22,25 +22,29 @@ func init() {
 }
 
 func main() {
+	// Initializing Database, Repositories and Services here
 	db := cache2go.Cache("example")
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
 
+	// Create a new Router and Register the GraphQL-Resolver
 	router := chi.NewRouter()
 	res := graphql.NewResolver(articleService)
 
+	// Some GraphQL-Configuration
 	graphqlConfig := graphql.NewExecutableSchema(graphql.Config{Resolvers: res})
 	websocketUpgrader := handler.WebsocketUpgrader(websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		}},
 	)
+	// Set ping-time for sockets to 5 seconds to prevent disconnects
 	websocketKeepalive := handler.WebsocketKeepAliveDuration(time.Second * 5)
-	graphqlHandler := handler.GraphQL(graphqlConfig, websocketUpgrader, websocketKeepalive)
 
+	graphqlHandler := handler.GraphQL(graphqlConfig, websocketUpgrader, websocketKeepalive)
 	router.Handle("/query", graphqlHandler)
 
-	// Adding Playground if application is running in debug mode
+	// Adding Playground, maybe adding a debug-mode switch later
 	playgroundHandler := handler.Playground("GraphQL", "/query")
 	router.Get("/playground", playgroundHandler)
 
@@ -48,6 +52,8 @@ func main() {
 	startHttpServer(router, 1337)
 }
 
+// Starting a HTTP-Server using the router object an a given port
+// Handles graceful-shutdowns
 func startHttpServer(router *chi.Mux, port int) {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
