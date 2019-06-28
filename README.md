@@ -46,6 +46,7 @@ This repository gives an overview of how you could structure a GraphQL-Applicati
 |[muesli/cache2go](https://github.com/muesli/cache2go)|Embedded Key-Value Database. Used as Storage-Backend for this example|
 |[prometheus/client_golang](https://github.com/prometheus/client_golang)|Prometheus client is used for providing `/metrics` endpoint|
 |[dimiro1/health](https://github.com/dimiro1/health)|Tool for providing a simple `/status` endpoint. Used for health-checking|
+
 ## Core Concepts
 <p align="center">
     <img src="./graphql-example-architecture.png" alt="architectorial overview" />
