@@ -3,7 +3,7 @@ module github.com/alexzimmer96/gqlgen-example
 go 1.12
 
 require (
-	github.com/99designs/gqlgen v0.7.2-0.20190626071953-fc3755f1c2f0
+	github.com/99designs/gqlgen v0.9.1
 	github.com/dimiro1/health v0.0.0-20180724185659-5a1598839344
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gorilla/websocket v1.4.0

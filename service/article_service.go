@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/alexzimmer96/gqlgen-example/model"
 	"github.com/alexzimmer96/gqlgen-example/repository"
+	"sync"
 )
 
 type IArticleService interface {
@@ -18,6 +19,7 @@ type IArticleService interface {
 type ArticleService struct {
 	repo                     repository.IArticleRepository
 	articleCreationObservers []*ArticleServiceObserver
+	mutex                    sync.Mutex
 }
 
 type ArticleServiceObserver struct {
@@ -74,14 +76,18 @@ func (svc *ArticleService) ApplyArticleChanges(id string, changes *model.UpdateA
 
 // Adds an Observer to the ArticleCreationStream. The returned object is holding a personal channel
 func (svc *ArticleService) SubscribeArticleCreation() *ArticleServiceObserver {
+	svc.mutex.Lock()
 	deliveryChannel := make(chan *model.Article)
 	observer := &ArticleServiceObserver{deliveryChannel}
 	svc.articleCreationObservers = append(svc.articleCreationObservers, observer)
+	svc.mutex.Unlock()
 	return observer
 }
 
 // Remove an Observer from the ArticleCreationStream
 func (svc *ArticleService) UnsubscribeArticleCreation(observer *ArticleServiceObserver) {
+	svc.mutex.Lock()
+	close(observer.CreationStream)
 	j := 0
 	for _, entry := range svc.articleCreationObservers {
 		if entry == observer {
@@ -89,17 +95,18 @@ func (svc *ArticleService) UnsubscribeArticleCreation(observer *ArticleServiceOb
 		}
 	}
 	svc.articleCreationObservers = svc.articleCreationObservers[:j]
+	svc.mutex.Unlock()
 }
 
 // This multiplexer routes incoming Articles from the the articleRepository to every active subscriber.
 func (svc *ArticleService) articleCreationStreamMultiplexer() {
 	incoming := svc.repo.GetCreationStream()
 	for {
-		select {
-		case article := <-incoming:
-			for _, entry := range svc.articleCreationObservers {
-				entry.CreationStream <- article
-			}
+		article := <-incoming
+		svc.mutex.Lock()
+		for _, entry := range svc.articleCreationObservers {
+			entry.CreationStream <- article
 		}
+		svc.mutex.Unlock()
 	}
 }

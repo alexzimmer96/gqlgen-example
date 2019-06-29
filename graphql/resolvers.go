@@ -79,21 +79,9 @@ type subscriptionResolver struct{ *Resolver }
 
 func (r *subscriptionResolver) ArticleCreated(ctx context.Context) (<-chan *model.Article, error) {
 	subscription := r.articleService.SubscribeArticleCreation()
-	incoming := subscription.CreationStream
-	returningChannel := make(chan *model.Article)
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				r.articleService.UnsubscribeArticleCreation(subscription)
-				close(incoming)
-				close(returningChannel)
-				return
-			case article := <-incoming:
-				subscriptionDeliveries.WithLabelValues("ArticleCreated").Add(1)
-				returningChannel <- article
-			}
-		}
+		<-ctx.Done()
+		r.articleService.UnsubscribeArticleCreation(subscription)
 	}()
-	return returningChannel, nil
+	return subscription.CreationStream, nil
 }

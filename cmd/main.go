@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/debug"
-	"runtime/pprof"
 	"time"
 )
 
@@ -56,7 +54,6 @@ func main() {
 	// Adding "/status" endpoint for health-checking
 	healthHandler := health.NewHandler()
 	http.Handle("/status", healthHandler)
-	http.HandleFunc("/_stack", getStackTraceHandler)
 
 	// Finally starting the HTTP-Server
 	startHttpServer(1337)
@@ -93,10 +90,4 @@ func startHttpServer(port int) {
 		logrus.Info("shutdown completed")
 	}
 	os.Exit(0)
-}
-
-func getStackTraceHandler(w http.ResponseWriter, r *http.Request) {
-	stack := debug.Stack()
-	w.Write(stack)
-	pprof.Lookup("goroutine").WriteTo(w, 2)
 }
