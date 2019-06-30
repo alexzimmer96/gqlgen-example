@@ -28,52 +28,28 @@ func main() {
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
 
-	// Create a new Router and Register the GraphQL-Resolver
-	res := graphql.NewResolver(articleService)
-
-	// Some GraphQL-Configuration
-	graphqlConfig := graphql.NewExecutableSchema(graphql.Config{Resolvers: res})
-	websocketUpgrader := handler.WebsocketUpgrader(websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		}},
-	)
-	// Set ping-time for sockets to 5 seconds to prevent disconnects
-	websocketKeepalive := handler.WebsocketKeepAliveDuration(time.Second * 5)
-
-	graphqlHandler := handler.GraphQL(graphqlConfig, websocketUpgrader, websocketKeepalive)
-	http.Handle("/query", graphqlHandler)
-
-	// Adding Playground, maybe adding a debug-mode switch later
+	// Creating handler for application-logic and add the endpoints
+	applicationHandler := http.NewServeMux()
+	graphqlHandler := getGraphQLHandler(articleService)
+	applicationHandler.Handle("/query", graphqlHandler)
 	playgroundHandler := handler.Playground("GraphQL", "/query")
-	http.Handle("/playground", playgroundHandler)
+	applicationHandler.Handle("/playground", playgroundHandler)
 
-	// Adding "/metrics" endpoint for prometheus
-	http.Handle("/metrics", promhttp.Handler())
-
-	// Adding "/status" endpoint for health-checking
-	healthHandler := health.NewHandler()
-	http.Handle("/status", healthHandler)
+	// Creating handler for monitoring and add the endpoints
+	monitoringHandler := http.NewServeMux()
+	monitoringHandler.Handle("/metrics", promhttp.Handler())
+	monitoringHandler.Handle("/status", health.NewHandler())
 
 	// Finally starting the HTTP-Server
-	startHttpServer(1337)
+	startHttpServer(1337, 1338, applicationHandler, monitoringHandler)
 }
 
 // Starting a HTTP-Server using the router object an a given port
 // Handles graceful-shutdowns
-func startHttpServer(port int) {
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", port),
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-	}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			logrus.Error(err)
-		}
-	}()
-	logrus.Info(fmt.Sprintf("server started and is available on %d", port))
+func startHttpServer(appPort, monitoringPort int, appHandler, monitoringHandler http.Handler) {
+	appSrv := startServerInstance(appPort, appHandler)
+	monitoringSrv := startServerInstance(monitoringPort, monitoringHandler)
+	logrus.Info(fmt.Sprintf("started application-server on port %d. Monitoring-server is available on port %d", appPort, monitoringPort))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -83,11 +59,43 @@ func startHttpServer(port int) {
 	// Save a deadline to wait for.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
-	err := srv.Shutdown(ctx)
+	err, err2 := appSrv.Shutdown(ctx), monitoringSrv.Shutdown(ctx)
 	if err != nil {
-		logrus.WithError(err).Error("failure while shutting down gracefully")
+		logrus.WithError(err).Error("failure while shutting down application-server gracefully")
+	} else if err2 != nil {
+		logrus.WithError(err).Error("failure while shutting down monitoring-server gracefully")
 	} else {
 		logrus.Info("shutdown completed")
 	}
 	os.Exit(0)
+}
+
+func startServerInstance(port int, handler http.Handler) *http.Server {
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", port),
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      handler,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logrus.Error(err)
+		}
+	}()
+	return srv
+}
+
+func getGraphQLHandler(articleService service.IArticleService) http.HandlerFunc {
+	res := graphql.NewResolver(articleService)
+
+	graphqlConfig := graphql.NewExecutableSchema(graphql.Config{Resolvers: res})
+	websocketUpgrader := handler.WebsocketUpgrader(websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		}},
+	)
+
+	websocketKeepalive := handler.WebsocketKeepAliveDuration(time.Second * 5)
+	return handler.GraphQL(graphqlConfig, websocketUpgrader, websocketKeepalive)
 }

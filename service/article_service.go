@@ -13,7 +13,8 @@ type IArticleService interface {
 	DeleteArticle(string) (bool, error)
 	CreateArticleFromRequest(*model.CreateArticle) (*model.Article, error)
 	ApplyArticleChanges(string, *model.UpdateArticle) (*model.Article, error)
-	SubscribeArticleCreation() (chan model.Article, chan bool)
+	SubscribeArticleCreation() *ArticleServiceObserver
+	UnsubscribeArticleCreation(*ArticleServiceObserver)
 }
 
 type ArticleService struct {
