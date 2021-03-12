@@ -89,8 +89,8 @@ func (svc *ArticleService) SubscribeArticleCreation() *ArticleServiceObserver {
 func (svc *ArticleService) UnsubscribeArticleCreation(observer *ArticleServiceObserver) {
 	svc.mutex.Lock()
 	close(observer.CreationStream)
-	for i, sub := range svc.articleCreationObservers {
-		if sub == observer {
+	for i, obs := range svc.articleCreationObservers {
+		if obs == observer {
 			// Remove from slice. Copy last element to the position of to be deleted element and truncate slice.
 			svc.articleCreationObservers[i] = svc.articleCreationObservers[len(svc.articleCreationObservers)-1]
 			svc.articleCreationObservers[len(svc.articleCreationObservers)-1] = nil
